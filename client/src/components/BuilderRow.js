@@ -90,7 +90,7 @@ const BuilderRow = ({
             });
           }}
           options={PredicateOptions}
-          placeholder={"Select predicate"}
+          placeholder={"Select Field"}
         />
 
         {/* If the selected predicate implies a number value, execute the following: */}
@@ -107,10 +107,11 @@ const BuilderRow = ({
                   updateForm({
                     target: { value: { first: "", last: "" }, name: "range" }
                   });
-                rowData.integerOperator.type === "RANGE" &&
-                  updateForm({
-                    target: { value: "", name: "numberVariable" }
-                  });
+                rowData.integerOperator.type === "RANGE" ||
+                  (rowData.integerOperator.type === "LIST" &&
+                    updateForm({
+                      target: { value: "", name: "numberVariable" }
+                    }));
                 updateForm({
                   target: {
                     value: integerOperatorOption,
@@ -145,7 +146,14 @@ const BuilderRow = ({
               <input
                 disabled={rowData.integerOperator === ""}
                 className={classes.numberInput}
-                type="number"
+                type={
+                  rowData.integerOperator.type === "LIST" ? "text" : "number"
+                }
+                placeholder={
+                  rowData.integerOperator.type === "LIST"
+                    ? "1,2,3"
+                    : "Enter Number"
+                }
                 name="numberVariable"
                 value={rowData.numberVariable}
                 onChange={updateForm}
@@ -177,6 +185,11 @@ const BuilderRow = ({
               disabled={rowData.stringOperator === ""}
               className={classes.textInput}
               type="text"
+              placeholder={
+                rowData.stringOperator.type === "LIST"
+                  ? "a,b,c"
+                  : "Enter String"
+              }
               name="stringVariable"
               value={rowData.stringVariable}
               onChange={updateForm}
@@ -227,7 +240,7 @@ const styles = {
     transform: "translate(0px, 1px)"
   },
   numberInput: {
-    width: 100,
+    width: 120,
     ...input
   },
   textInput: {

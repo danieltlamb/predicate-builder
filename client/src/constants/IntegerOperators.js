@@ -1,13 +1,9 @@
 const IntegerOperators = [
-  { value: "range", label: "in range", type: "RANGE" },
-  { value: "less_or_equal", label: "less than or equal to", type: "NUMBER" },
+  { value: "between", label: "in range", type: "RANGE" },
+  { value: "less_than", label: "less than", type: "NUMBER" },
   { value: "equals", label: "equal to", type: "NUMBER" },
-  { value: "not_equal", label: "not equal to", type: "NUMBER" },
-  {
-    value: "greater_or_equal",
-    label: "greater than or equal to",
-    type: "NUMBER"
-  }
+  { value: "greater_than", label: "greater than", type: "NUMBER" },
+  { value: "in_list", label: "in list", type: "LIST" }
 ];
 
 export default IntegerOperators;

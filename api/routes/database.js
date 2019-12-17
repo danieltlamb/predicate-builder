@@ -5,16 +5,16 @@ const databaseName = "'all_sessions'";
 
 function integerOperators(integerOperator, variable) {
   switch (integerOperator) {
-    case "range":
-      return " BETWEEN " + variable;
-    case "less_or_equal":
-      return " <= " + mysql.escape(variable);
     case "equals":
       return " = " + mysql.escape(variable);
-    case "not_equal":
-      return " != " + mysql.escape(variable);
-    case "greater_or_equal":
-      return " >= " + mysql.escape(variable);
+    case "between":
+      return " BETWEEN " + variable;
+    case "greater_than":
+      return " > " + mysql.escape(variable);
+    case "less_than":
+      return " < " + mysql.escape(variable);
+    case "in_list":
+      return " IN (" + variable + ")";
     default:
       return "";
   }
@@ -22,22 +22,14 @@ function integerOperators(integerOperator, variable) {
 
 function stringOperators(stringOperator, variable) {
   switch (stringOperator) {
-    case "starts_with":
-      return " LIKE " + mysql.escape(variable + "%");
-    case "not_starts_with":
-      return " NOT LIKE " + mysql.escape(variable + "%");
     case "equals":
       return " = " + mysql.escape(variable);
-    case "not_equal":
-      return " != " + mysql.escape(variable);
     case "contains":
       return " LIKE " + mysql.escape("%" + variable + "%");
-    case "not_contains":
-      return " NOT LIKE " + mysql.escape("%" + variable + "%");
+    case "starts_with":
+      return " LIKE " + mysql.escape(variable + "%");
     case "in_list":
       return " IN (" + variable + ")";
-    case "not_in_list":
-      return " NOT IN (" + variable + ")";
     default:
       return false;
   }
@@ -52,7 +44,7 @@ function findVariable(condition) {
     condition.predicate.type === "NUMBER" &&
     condition.integerOperator.type === "RANGE";
   const variableIsList =
-    condition.predicate.type !== "NUMBER" &&
+    condition.integerOperator.type === "LIST" ||
     condition.stringOperator.type === "LIST";
 
   if (variableIsString) {
@@ -91,7 +83,9 @@ function createSqlQuery(jsonPayload) {
     const secondHalf = stringOperator ? stringOperator : integerOperator;
     return field + secondHalf;
   });
-  const conditionStrings = conditions.join(" AND ");
+  const conditionStrings = conditions.length
+    ? conditions.join(" AND ")
+    : "1 = 1";
   return select + conditionStrings + ";";
 }
 
