@@ -1,4 +1,4 @@
-export const PredicateOptions = [
+export const FieldOptions = [
   { value: "user_email", label: "User Email", type: "EMAIL" },
   { value: "screen_width", label: "Screen Width", type: "NUMBER" },
   { value: "screen_height", label: "Screen Height", type: "NUMBER" },
@@ -10,4 +10,4 @@ export const PredicateOptions = [
   { value: "path", label: "Page Path", type: "STRING" }
 ];
 
-export default PredicateOptions;
+export default FieldOptions;

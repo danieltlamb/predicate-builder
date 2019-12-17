@@ -5,7 +5,7 @@ import produce from "immer";
 import { set, has } from "lodash";
 
 import Colors from "../constants/Colors";
-import PredicateOptions from "../constants/PredicateOptions";
+import FieldOptions from "../constants/FieldOptions";
 import IntegerOperators from "../constants/IntegerOperators";
 import StringOperators from "../constants/StringOperators";
 
@@ -79,22 +79,22 @@ const BuilderRow = ({
           menuPortalTarget={document.getElementById("menu-portal")}
           styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
           className={classes.dropDown}
-          value={rowData.predicate}
-          onChange={predicateOption => {
+          value={rowData.field}
+          onChange={fieldOption => {
             updateState(initialRow);
             updateForm({
               target: {
-                value: predicateOption,
-                name: "predicate"
+                value: fieldOption,
+                name: "field"
               }
             });
           }}
-          options={PredicateOptions}
+          options={FieldOptions}
           placeholder={"Select Field"}
         />
 
-        {/* If the selected predicate implies a number value, execute the following: */}
-        {rowData.predicate.type === "NUMBER" && (
+        {/* If the selected field implies a number value, execute the following: */}
+        {rowData.field.type === "NUMBER" && (
           <>
             <Tag>is</Tag>
             <Select
@@ -162,8 +162,8 @@ const BuilderRow = ({
           </>
         )}
 
-        {/* If the selected predicate implies a non-numeric value, execute the following */}
-        {rowData.predicate.type && rowData.predicate.type !== "NUMBER" && (
+        {/* If the selected field implies a non-numeric value, execute the following */}
+        {rowData.field.type && rowData.field.type !== "NUMBER" && (
           <>
             <Select
               menuPortalTarget={document.getElementById("menu-portal")}

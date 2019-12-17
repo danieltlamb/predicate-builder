@@ -1,7 +1,7 @@
 var express = require("express");
 var router = express.Router();
 
-const databaseName = "all_sessions";
+const tableName = "sessions";
 
 function integerOperators(integerOperator, variable) {
   switch (integerOperator) {
@@ -35,13 +35,28 @@ function stringOperators(stringOperator, variable) {
   }
 }
 
+function sanitizeField(predicate) {
+  const options = [
+    "user_email",
+    "screen_width",
+    "screen_height",
+    "visits",
+    "user_first_name",
+    "user_last_name",
+    "page_response",
+    "domain",
+    "path"
+  ];
+  return options.indexOf(predicate) >= 0 ? predicate : null;
+}
+
 function findVariable(condition) {
-  const variableIsString = condition.predicate.type !== "NUMBER";
+  const variableIsString = condition.field.type !== "NUMBER";
   const variableIsNumber =
-    condition.predicate.type === "NUMBER" &&
+    condition.field.type === "NUMBER" &&
     condition.integerOperator.type !== "RANGE";
   const variableIsRange =
-    condition.predicate.type === "NUMBER" &&
+    condition.field.type === "NUMBER" &&
     condition.integerOperator.type === "RANGE";
   const variableIsList =
     condition.integerOperator.type === "LIST" ||
@@ -68,9 +83,9 @@ function findVariable(condition) {
 }
 
 function createSqlQuery(jsonPayload) {
-  const select = `SELECT * FROM ${databaseName} WHERE `;
+  const select = `SELECT * FROM ${tableName}`;
   const conditions = jsonPayload.map(condition => {
-    const field = mysql.escape(condition.predicate.value);
+    const field = sanitizeField(condition.field.value);
     const variable = findVariable(condition);
     const integerOperator = integerOperators(
       condition.integerOperator.value,
@@ -84,34 +99,33 @@ function createSqlQuery(jsonPayload) {
     return field + secondHalf;
   });
   const conditionStrings = conditions.length
-    ? conditions.join(" AND ")
-    : "1 = 1";
-  return select + conditionStrings + ";";
+    ? " WHERE " + conditions.join(" AND ") + ";"
+    : "";
+  return select + conditionStrings;
 }
 
 var mysql = require("mysql");
 var connection = mysql.createConnection({
   host: "localhost",
-  user: "sessionsapp",
-  password: "Password123"
-  // database: databaseName
+  user: "predicate-builder",
+  password: "Password123",
+  database: "all_sessions"
 });
-
 connection.connect();
-
-// connection.query("SELECT 1 + 1 AS solution", function(err, rows, fields) {
-//   if (err) throw err;
-
-//   console.log("The solution is: ", rows[0].solution);
-// });
-
 console.log("database connected");
 
 router.post("/", function(req, res, next) {
   console.log(createSqlQuery(req.body));
-  res.send(createSqlQuery(req.body));
+
+  connection.query(createSqlQuery(req.body), function(err, rows, fields) {
+    if (err) throw err;
+
+    console.log(rows.length, " rows matched");
+
+    res.send({ queryString: createSqlQuery(req.body), matches: rows });
+  });
 });
 
-connection.end();
+// connection.end();
 
 module.exports = router;

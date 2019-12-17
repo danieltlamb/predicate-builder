@@ -9,7 +9,7 @@ import Button from "./Button";
 import BuilderRow from "./BuilderRow";
 
 const initialRow = {
-  predicate: "",
+  field: "",
   stringOperator: "",
   integerOperator: "",
   range: { first: "", last: "" },
@@ -18,8 +18,7 @@ const initialRow = {
 };
 
 const isRowComplete = row => {
-  const variableIsNumber =
-    row.predicate.type && row.predicate.type === "NUMBER";
+  const variableIsNumber = row.field.type && row.field.type === "NUMBER";
   const variableIsString = !variableIsNumber;
   const variableIsRange =
     variableIsNumber &&
@@ -44,14 +43,14 @@ const PredicateBuilder = ({ classes }) => {
       headers: { "Content-Type": "application/json" }
     })
       .then(res => res.text())
-      .then(res => setApiResponse(res));
+      .then(res => setApiResponse(JSON.parse(res)));
   };
 
   const forceUpdate = useForceUpdate();
 
   const handleRowUpdate = ({
     rowIndex,
-    predicate,
+    field,
     stringOperator,
     integerOperator,
     range,
@@ -59,7 +58,7 @@ const PredicateBuilder = ({ classes }) => {
     numberVariable
   }) => {
     const newRow = {
-      predicate: predicate,
+      field: field,
       stringOperator: stringOperator,
       integerOperator: integerOperator,
       range: range,
@@ -113,7 +112,13 @@ const PredicateBuilder = ({ classes }) => {
             })}
         </div>
 
-        <p>{apiResponse}</p>
+        <p>
+          <b>{apiResponse.queryString && apiResponse.queryString}</b>
+        </p>
+
+        <p>
+          {apiResponse.matches && apiResponse.matches.length + " Result(s)"}
+        </p>
 
         <Button wide handleClick={makeServerRequest}>
           Search
