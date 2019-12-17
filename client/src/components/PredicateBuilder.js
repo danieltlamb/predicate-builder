@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import injectSheet from "react-jss";
+import useForceUpdate from "use-force-update";
+import { findLastIndex } from "lodash";
 
 import Colors from "../constants/Colors";
+
 import Button from "./Button";
 import Tag from "./Tag";
 import BuilderRow from "./BuilderRow";
@@ -28,9 +31,12 @@ const PredicateBuilder = ({ classes }) => {
 
   useEffect(() => {
     callAPI();
+    console.log("Update Rows", allRows);
   });
 
-  const handleRowComplete = ({
+  const forceUpdate = useForceUpdate();
+
+  const handleRowUpdate = ({
     rowIndex,
     event,
     expression,
@@ -48,28 +54,25 @@ const PredicateBuilder = ({ classes }) => {
       numberVariable: numberVariable
     };
 
-    // prevState.splice(rowIndex, 1, newRow);
-
     setAllRows(prevState => {
       if (JSON.stringify(prevState[rowIndex]) !== JSON.stringify(newRow)) {
         prevState[rowIndex] = newRow;
       }
       return prevState;
     });
-    console.log("Update Rows", allRows);
+    forceUpdate();
   };
 
   const handleAddRow = () => {
     setAllRows(prevState => [...(prevState && prevState), initialRow]);
   };
 
-  const handleRemoveRow = i => {
+  const handleRemoveRow = index => {
     setAllRows(prevState => {
-      prevState && prevState.splice(i, 1);
+      prevState && prevState.splice(index, 1);
       return prevState;
     });
-
-    console.log("Update Rows", allRows);
+    forceUpdate();
   };
 
   return (
@@ -83,11 +86,13 @@ const PredicateBuilder = ({ classes }) => {
             allRows.map((row, i) => (
               <BuilderRow
                 key={`builder-row-${i}`}
-                removable={true}
-                handleRowComplete={handleRowComplete}
+                initialRow={initialRow}
+                handleRowUpdate={handleRowUpdate}
                 handleRemoveRow={handleRemoveRow}
+                handleAddRow={handleAddRow}
                 rowData={row}
                 rowIndex={i}
+                lastRow={i === findLastIndex(allRows)}
               />
             ))}
         </div>

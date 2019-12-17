@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import injectSheet from "react-jss";
 import Select from "react-select";
+import produce from "immer";
+import { set, has } from "lodash";
 
 import Colors from "../constants/Colors";
 import EventOptions from "../constants/EventOptions";
@@ -10,175 +12,196 @@ import ExpressionOptions from "../constants/ExpressionOptions";
 import Button from "./Button";
 import Tag from "./Tag";
 
+// Reducer code adapted from: https://levelup.gitconnected.com/handling-complex-form-state-using-react-hooks-76ee7bc937
+function reducer(state, updateArg) {
+  if (updateArg.constructor === Function) {
+    return { ...state, ...updateArg(state) };
+  }
+  if (updateArg.constructor === Object) {
+    if (has(updateArg, "_path") && has(updateArg, "_value")) {
+      const { _path, _value } = updateArg;
+      return produce(state, draft => {
+        set(draft, _path, _value);
+      });
+    } else {
+      return { ...state, ...updateArg };
+    }
+  }
+}
+
 const BuilderRow = ({
   classes,
-  removable,
-  handleRowComplete,
+  initialRow,
+  handleRowUpdate,
   handleRemoveRow,
+  handleAddRow,
   rowData,
-  rowIndex
+  rowIndex,
+  lastRow
 }) => {
-  const [selectedEventOption, setSelectedEventOption] = useState("");
-  const [selectedOperatorOption, setSelectedOperatorOption] = useState("");
-  const [selectedExpressionOption, setSelectedExpressionOption] = useState("");
-  const [firstInRange, setFirstInRange] = useState("");
-  const [lastInRange, setLastInRange] = useState("");
-  const [numberVariable, setNumberVariable] = useState("");
-  const [stringVariable, setStringVariable] = useState("");
+  const [state, updateState] = React.useReducer(reducer, initialRow);
+  const updateForm = React.useCallback(({ target: { value, name } }) => {
+    const updatePath = name.split(".");
+    if (updatePath.length === 1) {
+      const [key] = updatePath;
 
-  const variableIsString =
-    selectedEventOption.type && selectedEventOption.type !== "NUMBER";
-  const variableIsNumber =
-    selectedEventOption.type && selectedEventOption.type === "NUMBER";
-  const variableIsRange =
-    variableIsNumber &&
-    selectedOperatorOption.type &&
-    selectedOperatorOption.type === "RANGE";
-  const variableSelected =
-    (variableIsNumber && numberVariable !== "") ||
-    (variableIsString && stringVariable !== "") ||
-    (variableIsRange && firstInRange !== "" && lastInRange !== "");
+      updateState({
+        [key]: value
+      });
+    }
 
-  const newRowData = {
-    rowIndex: rowIndex,
-    event: selectedEventOption,
-    expression: selectedExpressionOption,
-    operator: selectedOperatorOption,
-    range: { first: firstInRange, last: lastInRange },
-    stringVariable: stringVariable,
-    numberVariable: numberVariable
-  };
+    if (updatePath.length === 2) {
+      updateState({
+        _path: updatePath,
+        _value: value
+      });
+    }
+  }, []);
 
   useEffect(() => {
-    handleRowComplete(newRowData);
-  }, [
-    variableSelected &&
-      rowData &&
-      JSON.stringify(rowData) !== JSON.stringify(newRowData)
-  ]);
+    handleRowUpdate({ rowIndex: rowIndex, ...state });
+  }, [state]);
+
+  const variableIsNumber =
+    rowData.event.type && rowData.event.type === "NUMBER";
+  const variableIsString = !variableIsNumber;
+  const variableIsRange =
+    variableIsNumber &&
+    rowData.operator.type &&
+    rowData.operator.type === "RANGE";
+  const variableSelected =
+    (variableIsNumber && rowData.numberVariable !== "") ||
+    (variableIsString && rowData.stringVariable !== "") ||
+    (variableIsRange &&
+      rowData.range.first !== "" &&
+      rowData.range.last !== "");
 
   return (
-    <div className={classes.row}>
-      <Button
-        secondary
-        disabled={!removable}
-        handleClick={() => handleRemoveRow(rowIndex)}
-      >
-        -
-      </Button>
-      <Select
-        menuPortalTarget={document.getElementById("menu-portal")}
-        styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
-        className={classes.dropDown}
-        value={
-          rowData && rowData.event !== "" ? rowData.event : selectedEventOption
-        }
-        onChange={selectedEventOption =>
-          setSelectedEventOption(selectedEventOption)
-        }
-        options={EventOptions}
-        isDisabled={removable && selectedEventOption !== ""}
-        placeholder={"Select Event"}
-      />
-
-      {/* If the selected event implies a number value, execute the following: */}
-      {selectedEventOption.type && selectedEventOption.type === "NUMBER" && (
-        <>
-          <Tag>is</Tag>
-          <Select
-            menuPortalTarget={document.getElementById("menu-portal")}
-            styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
-            className={classes.dropDown}
-            value={
-              rowData && rowData.operator !== ""
-                ? rowData.operator
-                : selectedOperatorOption
-            }
-            onChange={selectedOperatorOption =>
-              setSelectedOperatorOption(selectedOperatorOption)
-            }
-            options={OperatorOptions}
-            isDisabled={removable && selectedOperatorOption !== ""}
-            placeholder={"Select Operator"}
-          />
-          {/* If the selected logical operator implies a range of numbers, execute the following: */}
-          {selectedOperatorOption.type &&
-          selectedOperatorOption.type === "RANGE" ? (
-            <>
-              <input
-                className={classes.numberInput}
-                type="number"
-                value={
-                  rowData && rowData.range && rowData.range.first !== ""
-                    ? rowData.range.first
-                    : firstInRange
-                }
-                onChange={e => setFirstInRange(e.target.value)}
-              />
-              <Tag>and</Tag>
-              <input
-                className={classes.numberInput}
-                type="number"
-                value={
-                  rowData && rowData.range && rowData.range.last !== ""
-                    ? rowData.range.last
-                    : lastInRange
-                }
-                onChange={e => setLastInRange(e.target.value)}
-              />
-            </>
-          ) : (
-            // If the selected logical operator implies only one number, execute the following:
-            <input
-              disabled={selectedOperatorOption === ""}
-              className={classes.numberInput}
-              type="number"
-              value={
-                rowData && rowData.numberVariable !== ""
-                  ? rowData.numberVariable
-                  : numberVariable
+    <>
+      <div className={classes.row}>
+        <Button
+          secondary
+          disabled={lastRow && rowIndex === 0}
+          handleClick={() => {
+            handleRemoveRow(rowIndex);
+          }}
+        >
+          -
+        </Button>
+        <Select
+          menuPortalTarget={document.getElementById("menu-portal")}
+          styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
+          className={classes.dropDown}
+          value={rowData.event}
+          onChange={eventOption => {
+            updateState(initialRow);
+            updateForm({
+              target: {
+                value: eventOption,
+                name: "event"
               }
-              onChange={e => {
-                setNumberVariable(e.target.value);
-              }}
-            />
-          )}
-        </>
-      )}
+            });
+          }}
+          options={EventOptions}
+          placeholder={"Select Event"}
+        />
 
-      {/* If the selected event implies a non-numeric value, execute the following */}
-      {selectedEventOption.type && selectedEventOption.type !== "NUMBER" && (
-        <>
-          <Select
-            menuPortalTarget={document.getElementById("menu-portal")}
-            styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
-            className={classes.dropDown}
-            value={
-              rowData && rowData.expression !== ""
-                ? rowData.expression
-                : selectedExpressionOption
-            }
-            onChange={selectedExpressionOption =>
-              setSelectedExpressionOption(selectedExpressionOption)
-            }
-            options={ExpressionOptions}
-            isDisabled={removable && selectedExpressionOption !== ""}
-            placeholder={"Select Expression"}
-          />
-          <input
-            disabled={selectedExpressionOption === ""}
-            className={classes.textInput}
-            type="text"
-            value={
-              rowData && rowData.stringVariable !== ""
-                ? rowData.stringVariable
-                : stringVariable
-            }
-            onChange={e => setStringVariable(e.target.value)}
-          />
-        </>
+        {/* If the selected event implies a number value, execute the following: */}
+        {rowData.event.type === "NUMBER" && (
+          <>
+            <Tag>is</Tag>
+            <Select
+              menuPortalTarget={document.getElementById("menu-portal")}
+              styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
+              className={classes.dropDown}
+              value={rowData.operator}
+              onChange={operatorOption => {
+                operatorOption.type !== "RANGE" &&
+                  updateForm({
+                    target: { value: { first: "", last: "" }, name: "range" }
+                  });
+                rowData.operator.type === "RANGE" &&
+                  updateForm({
+                    target: { value: "", name: "numberVariable" }
+                  });
+                updateForm({
+                  target: { value: operatorOption, name: "operator" }
+                });
+              }}
+              options={OperatorOptions}
+              placeholder={"Select Operator"}
+            />
+            {/* If the selected logical operator implies a range of numbers, execute the following: */}
+            {rowData.operator.type === "RANGE" ? (
+              <>
+                <input
+                  className={classes.numberInput}
+                  type="number"
+                  name="range.first"
+                  value={rowData.range.first}
+                  onChange={updateForm}
+                />
+                <Tag>and</Tag>
+                <input
+                  className={classes.numberInput}
+                  type="number"
+                  name="range.last"
+                  value={rowData.range.last}
+                  onChange={updateForm}
+                />
+              </>
+            ) : (
+              // If the selected logical operator implies only one number, execute the following:
+              <input
+                disabled={rowData.operator === ""}
+                className={classes.numberInput}
+                type="number"
+                name="numberVariable"
+                value={rowData.numberVariable}
+                onChange={updateForm}
+              />
+            )}
+          </>
+        )}
+
+        {/* If the selected event implies a non-numeric value, execute the following */}
+        {rowData.event.type && rowData.event.type !== "NUMBER" && (
+          <>
+            <Select
+              menuPortalTarget={document.getElementById("menu-portal")}
+              styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
+              className={classes.dropDown}
+              value={rowData.expression}
+              onChange={expressionOption =>
+                updateForm({
+                  target: { value: expressionOption, name: "expression" }
+                })
+              }
+              options={ExpressionOptions}
+              placeholder={"Select Expression"}
+            />
+            <input
+              disabled={rowData.expression === ""}
+              className={classes.textInput}
+              type="text"
+              name="stringVariable"
+              value={rowData.stringVariable}
+              onChange={updateForm}
+            />
+          </>
+        )}
+        <div
+          className={variableSelected ? classes.greenDot : classes.greyDot}
+        />
+      </div>
+      {lastRow && (
+        <div className={classes.row}>
+          <Button disabled={!variableSelected} handleClick={handleAddRow}>
+            AND
+          </Button>
+        </div>
       )}
-    </div>
+    </>
   );
 };
 
@@ -193,9 +216,18 @@ const input = {
   transform: "translate(0px, 1px)"
 };
 
+const dot = {
+  width: 10,
+  height: 10,
+  display: "inline-block",
+  borderRadius: 5,
+  marginLeft: 8
+};
+
 const styles = {
   row: {
-    padding: 10
+    padding: 10,
+    minWidth: 900
   },
   dropDown: {
     margin: [0, 5],
@@ -204,12 +236,20 @@ const styles = {
     transform: "translate(0px, 1px)"
   },
   numberInput: {
-    width: 70,
+    width: 100,
     ...input
   },
   textInput: {
     width: 200,
     ...input
+  },
+  greyDot: {
+    background: Colors.borderGrey,
+    ...dot
+  },
+  greenDot: {
+    background: Colors.green,
+    ...dot
   }
 };
 

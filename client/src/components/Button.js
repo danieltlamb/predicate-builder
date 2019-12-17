@@ -14,8 +14,9 @@ const Button = ({ children, handleClick, secondary, disabled, classes }) => {
 };
 
 const buttons = {
-  padding: 10,
+  padding: [10, 25],
   fontSize: 12,
+  fontWeight: "bold",
   transition: "200ms",
   display: "inline-block",
   margin: [0, 5],
