@@ -1,7 +1,7 @@
 var express = require("express");
 var router = express.Router();
 
-const databaseName = "'all_sessions'";
+const databaseName = "all_sessions";
 
 function integerOperators(integerOperator, variable) {
   switch (integerOperator) {
