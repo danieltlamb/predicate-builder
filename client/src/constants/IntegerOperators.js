@@ -1,4 +1,4 @@
-const OperatorOptions = [
+const IntegerOperators = [
   { value: "range", label: "in range", type: "RANGE" },
   { value: "less_or_equal", label: "less than or equal to", type: "NUMBER" },
   { value: "equals", label: "equal to", type: "NUMBER" },
@@ -10,4 +10,4 @@ const OperatorOptions = [
   }
 ];
 
-export default OperatorOptions;
+export default IntegerOperators;

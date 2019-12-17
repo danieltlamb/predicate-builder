@@ -2,7 +2,14 @@ import React from "react";
 import injectSheet from "react-jss";
 import Colors from "../constants/Colors";
 
-const Button = ({ children, handleClick, secondary, disabled, classes }) => {
+const Button = ({
+  children,
+  handleClick,
+  secondary,
+  wide,
+  disabled,
+  classes
+}) => {
   return (
     <button
       className={secondary ? classes.buttonSecondary : classes.buttonPrimary}
@@ -14,8 +21,8 @@ const Button = ({ children, handleClick, secondary, disabled, classes }) => {
 };
 
 const buttons = {
-  padding: [10, 25],
-  fontSize: 12,
+  padding: [10, 14],
+  fontSize: 14,
   fontWeight: "bold",
   transition: "200ms",
   display: "inline-block",
@@ -29,6 +36,10 @@ const disabled = {
   filter: "grayscale(1)"
 };
 
+const wide = {
+  padding: [10, 55]
+};
+
 const styles = {
   buttonPrimary: props => ({
     background: Colors.primaryBlue,
@@ -36,6 +47,7 @@ const styles = {
     border: "none",
     ...buttons,
     ...(props.disabled ? disabled : null),
+    ...(props.wide ? wide : null),
     "&:hover": {
       background: Colors.secondaryBlue
     }
@@ -46,6 +58,7 @@ const styles = {
     border: [1, "solid", Colors.borderGrey],
     ...buttons,
     ...(props.disabled ? disabled : null),
+    ...(props.wide ? wide : null),
     "&:hover": {
       border: [1, "solid", Colors.primaryBlue],
       color: Colors.primaryBlue

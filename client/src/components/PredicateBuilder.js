@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import injectSheet from "react-jss";
 import useForceUpdate from "use-force-update";
 import { findLastIndex } from "lodash";
@@ -6,49 +6,62 @@ import { findLastIndex } from "lodash";
 import Colors from "../constants/Colors";
 
 import Button from "./Button";
-import Tag from "./Tag";
 import BuilderRow from "./BuilderRow";
 
 const initialRow = {
-  event: "", //{ value: "", label: "", type: "" },
-  expression: "", //{ value: "", label: "", type: "" },
-  operator: "", //{ value: "", label: "", type: "" },
+  predicate: "",
+  stringOperator: "",
+  integerOperator: "",
   range: { first: "", last: "" },
   stringVariable: "",
   numberVariable: ""
 };
 
+const isRowComplete = row => {
+  const variableIsNumber =
+    row.predicate.type && row.predicate.type === "NUMBER";
+  const variableIsString = !variableIsNumber;
+  const variableIsRange =
+    variableIsNumber &&
+    row.integerOperator.type &&
+    row.integerOperator.type === "RANGE";
+  const variableSelected =
+    (variableIsNumber && row.numberVariable !== "") ||
+    (variableIsString && row.stringVariable !== "") ||
+    (variableIsRange && row.range.first !== "" && row.range.last !== "");
+  return variableSelected;
+};
+
 const PredicateBuilder = ({ classes }) => {
-  const [queryRequest, setQueryRequest] = useState("");
   const [apiResponse, setApiResponse] = useState("");
   const [allRows, setAllRows] = useState([initialRow]);
+  const completeRows = allRows.filter(row => isRowComplete(row));
 
-  const callAPI = () => {
-    fetch(`http://localhost:9000/database?request=${queryRequest}`)
+  const makeServerRequest = () => {
+    fetch(`http://localhost:9000/database`, {
+      method: "POST",
+      body: JSON.stringify(completeRows),
+      headers: { "Content-Type": "application/json" }
+    })
       .then(res => res.text())
       .then(res => setApiResponse(res));
   };
-
-  useEffect(() => {
-    callAPI();
-    console.log("Update Rows", allRows);
-  });
 
   const forceUpdate = useForceUpdate();
 
   const handleRowUpdate = ({
     rowIndex,
-    event,
-    expression,
-    operator,
+    predicate,
+    stringOperator,
+    integerOperator,
     range,
     stringVariable,
     numberVariable
   }) => {
     const newRow = {
-      event: event,
-      expression: expression,
-      operator: operator,
+      predicate: predicate,
+      stringOperator: stringOperator,
+      integerOperator: integerOperator,
       range: range,
       stringVariable: stringVariable,
       numberVariable: numberVariable
@@ -83,30 +96,27 @@ const PredicateBuilder = ({ classes }) => {
         <div className={classes.column}>
           {allRows &&
             allRows.length &&
-            allRows.map((row, i) => (
-              <BuilderRow
-                key={`builder-row-${i}`}
-                initialRow={initialRow}
-                handleRowUpdate={handleRowUpdate}
-                handleRemoveRow={handleRemoveRow}
-                handleAddRow={handleAddRow}
-                rowData={row}
-                rowIndex={i}
-                lastRow={i === findLastIndex(allRows)}
-              />
-            ))}
+            allRows.map((row, i) => {
+              return (
+                <BuilderRow
+                  key={`builder-row-${i}`}
+                  initialRow={initialRow}
+                  handleRowUpdate={handleRowUpdate}
+                  handleRemoveRow={handleRemoveRow}
+                  handleAddRow={handleAddRow}
+                  rowData={row}
+                  rowIndex={i}
+                  isRowComplete={isRowComplete(row)}
+                  lastRow={i === findLastIndex(allRows)}
+                />
+              );
+            })}
         </div>
 
-        <p className="App-intro">{apiResponse}</p>
+        <p>{apiResponse}</p>
 
-        {/* Various Components below */}
-
-        <Button handleClick={() => setQueryRequest("SELECT ALL WHERE 1 = 1")}>
-          Click to set Query Request
-        </Button>
-        <Tag>is</Tag>
-        <Button secondary handleClick={handleAddRow}>
-          Add Row
+        <Button wide handleClick={makeServerRequest}>
+          Search
         </Button>
       </div>
     </>
@@ -116,8 +126,8 @@ const PredicateBuilder = ({ classes }) => {
 const styles = {
   contentContainer: {
     background: Colors.background,
-    width: "80%",
-    minHeight: 800,
+    minWidth: 900,
+    minHeight: 500,
     padding: [0, 12],
     borderRadius: 4
   },

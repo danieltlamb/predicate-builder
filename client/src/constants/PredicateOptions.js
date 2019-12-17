@@ -1,4 +1,4 @@
-export const EventOptions = [
+export const PredicateOptions = [
   { value: "user_email", label: "User Email", type: "EMAIL" },
   { value: "screen_width", label: "Screen Width", type: "NUMBER" },
   { value: "screen_height", label: "Screen Height", type: "NUMBER" },
@@ -10,4 +10,4 @@ export const EventOptions = [
   { value: "path", label: "Page Path", type: "STRING" }
 ];
 
-export default EventOptions;
+export default PredicateOptions;

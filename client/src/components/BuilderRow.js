@@ -5,9 +5,9 @@ import produce from "immer";
 import { set, has } from "lodash";
 
 import Colors from "../constants/Colors";
-import EventOptions from "../constants/EventOptions";
-import OperatorOptions from "../constants/OperatorOptions";
-import ExpressionOptions from "../constants/ExpressionOptions";
+import PredicateOptions from "../constants/PredicateOptions";
+import IntegerOperators from "../constants/IntegerOperators";
+import StringOperators from "../constants/StringOperators";
 
 import Button from "./Button";
 import Tag from "./Tag";
@@ -37,6 +37,7 @@ const BuilderRow = ({
   handleAddRow,
   rowData,
   rowIndex,
+  isRowComplete,
   lastRow
 }) => {
   const [state, updateState] = React.useReducer(reducer, initialRow);
@@ -62,20 +63,6 @@ const BuilderRow = ({
     handleRowUpdate({ rowIndex: rowIndex, ...state });
   }, [state]);
 
-  const variableIsNumber =
-    rowData.event.type && rowData.event.type === "NUMBER";
-  const variableIsString = !variableIsNumber;
-  const variableIsRange =
-    variableIsNumber &&
-    rowData.operator.type &&
-    rowData.operator.type === "RANGE";
-  const variableSelected =
-    (variableIsNumber && rowData.numberVariable !== "") ||
-    (variableIsString && rowData.stringVariable !== "") ||
-    (variableIsRange &&
-      rowData.range.first !== "" &&
-      rowData.range.last !== "");
-
   return (
     <>
       <div className={classes.row}>
@@ -92,47 +79,50 @@ const BuilderRow = ({
           menuPortalTarget={document.getElementById("menu-portal")}
           styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
           className={classes.dropDown}
-          value={rowData.event}
-          onChange={eventOption => {
+          value={rowData.predicate}
+          onChange={predicateOption => {
             updateState(initialRow);
             updateForm({
               target: {
-                value: eventOption,
-                name: "event"
+                value: predicateOption,
+                name: "predicate"
               }
             });
           }}
-          options={EventOptions}
-          placeholder={"Select Event"}
+          options={PredicateOptions}
+          placeholder={"Select predicate"}
         />
 
-        {/* If the selected event implies a number value, execute the following: */}
-        {rowData.event.type === "NUMBER" && (
+        {/* If the selected predicate implies a number value, execute the following: */}
+        {rowData.predicate.type === "NUMBER" && (
           <>
             <Tag>is</Tag>
             <Select
               menuPortalTarget={document.getElementById("menu-portal")}
               styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
               className={classes.dropDown}
-              value={rowData.operator}
-              onChange={operatorOption => {
-                operatorOption.type !== "RANGE" &&
+              value={rowData.integerOperator}
+              onChange={integerOperatorOption => {
+                integerOperatorOption.type !== "RANGE" &&
                   updateForm({
                     target: { value: { first: "", last: "" }, name: "range" }
                   });
-                rowData.operator.type === "RANGE" &&
+                rowData.integerOperator.type === "RANGE" &&
                   updateForm({
                     target: { value: "", name: "numberVariable" }
                   });
                 updateForm({
-                  target: { value: operatorOption, name: "operator" }
+                  target: {
+                    value: integerOperatorOption,
+                    name: "integerOperator"
+                  }
                 });
               }}
-              options={OperatorOptions}
+              options={IntegerOperators}
               placeholder={"Select Operator"}
             />
             {/* If the selected logical operator implies a range of numbers, execute the following: */}
-            {rowData.operator.type === "RANGE" ? (
+            {rowData.integerOperator.type === "RANGE" ? (
               <>
                 <input
                   className={classes.numberInput}
@@ -153,7 +143,7 @@ const BuilderRow = ({
             ) : (
               // If the selected logical operator implies only one number, execute the following:
               <input
-                disabled={rowData.operator === ""}
+                disabled={rowData.integerOperator === ""}
                 className={classes.numberInput}
                 type="number"
                 name="numberVariable"
@@ -164,24 +154,27 @@ const BuilderRow = ({
           </>
         )}
 
-        {/* If the selected event implies a non-numeric value, execute the following */}
-        {rowData.event.type && rowData.event.type !== "NUMBER" && (
+        {/* If the selected predicate implies a non-numeric value, execute the following */}
+        {rowData.predicate.type && rowData.predicate.type !== "NUMBER" && (
           <>
             <Select
               menuPortalTarget={document.getElementById("menu-portal")}
               styles={{ menuPortal: styles => ({ ...styles, zIndex: 1000 }) }}
               className={classes.dropDown}
-              value={rowData.expression}
-              onChange={expressionOption =>
+              value={rowData.stringOperator}
+              onChange={stringOperatorOption =>
                 updateForm({
-                  target: { value: expressionOption, name: "expression" }
+                  target: {
+                    value: stringOperatorOption,
+                    name: "stringOperator"
+                  }
                 })
               }
-              options={ExpressionOptions}
-              placeholder={"Select Expression"}
+              options={StringOperators}
+              placeholder={"Select Operator"}
             />
             <input
-              disabled={rowData.expression === ""}
+              disabled={rowData.stringOperator === ""}
               className={classes.textInput}
               type="text"
               name="stringVariable"
@@ -190,13 +183,11 @@ const BuilderRow = ({
             />
           </>
         )}
-        <div
-          className={variableSelected ? classes.greenDot : classes.greyDot}
-        />
+        <div className={isRowComplete ? classes.greenDot : classes.greyDot} />
       </div>
       {lastRow && (
         <div className={classes.row}>
-          <Button disabled={!variableSelected} handleClick={handleAddRow}>
+          <Button disabled={!isRowComplete} handleClick={handleAddRow}>
             AND
           </Button>
         </div>
