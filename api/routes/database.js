@@ -105,25 +105,27 @@ function createSqlQuery(jsonPayload) {
 }
 
 var mysql = require("mysql");
-var connection = mysql.createConnection({
-  host: "localhost",
-  user: "predicate-builder",
-  password: "Password123",
-  database: "all_sessions"
-});
-connection.connect();
-console.log("database connected");
+// var connection = mysql.createConnection({
+//   host: "localhost",
+//   user: "predicate-builder",
+//   password: "Password123",
+//   database: "all_sessions"
+// });
+// connection.connect();
+// console.log("database connected");
 
 router.post("/", function(req, res, next) {
   console.log(createSqlQuery(req.body));
 
-  connection.query(createSqlQuery(req.body), function(err, rows, fields) {
-    if (err) throw err;
+  // connection.query(createSqlQuery(req.body), function(err, rows, fields) {
+  //   if (err) throw err;
 
-    console.log(rows.length, " rows matched");
+  //   console.log(rows.length, " rows matched");
 
-    res.send({ queryString: createSqlQuery(req.body), matches: rows });
-  });
+  //   res.send({ queryString: createSqlQuery(req.body), matches: rows });
+  // });
+
+  res.send({ queryString: createSqlQuery(req.body), matches: [] });
 });
 
 // connection.end();

@@ -116,9 +116,9 @@ const PredicateBuilder = ({ classes }) => {
           <b>{apiResponse.queryString && apiResponse.queryString}</b>
         </p>
 
-        <p>
+        {/* <p>
           {apiResponse.matches && apiResponse.matches.length + " Result(s)"}
-        </p>
+        </p> */}
 
         <Button wide handleClick={makeServerRequest}>
           Search
