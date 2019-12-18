@@ -1,6 +1,6 @@
 # predicate-builder
 
-Created by Daniel Lamb for QM code challenge
+Created by Daniel Lamb for QM tech challenge
 
 run `npm start` in /client to start frontend on port 3000 
 
